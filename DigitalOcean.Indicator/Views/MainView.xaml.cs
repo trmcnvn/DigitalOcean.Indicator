@@ -20,6 +20,7 @@ namespace DigitalOcean.Indicator.Views {
             this.WhenAnyObservable(x => x.ViewModel.Preferences)
                 .Subscribe(_ => {
                     var view = new PreferencesView { Owner = this };
+                    ((IViewFor)view).ViewModel = new PreferencesViewModel();
                     view.Show();
                 });
             this.WhenAnyObservable(x => x.ViewModel.Close)

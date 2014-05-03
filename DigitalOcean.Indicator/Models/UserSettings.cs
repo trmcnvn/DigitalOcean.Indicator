@@ -36,6 +36,8 @@ namespace DigitalOcean.Indicator.Models {
         }
 
         public void SetDefaultValues() {
+            ClientId = "";
+            ApiKey = "";
             RefreshInterval = TimeSpan.FromMinutes(5);
         }
 

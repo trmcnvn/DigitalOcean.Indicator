@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reactive.Linq;
 using ReactiveUI;
 
 namespace DigitalOcean.Indicator.ViewModels {

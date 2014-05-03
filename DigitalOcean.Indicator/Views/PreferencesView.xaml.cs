@@ -1,4 +1,8 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Reactive;
+using System.Reactive.Disposables;
 using System.Windows;
 using DigitalOcean.Indicator.ViewModels;
 using ReactiveUI;
@@ -10,11 +14,14 @@ namespace DigitalOcean.Indicator.Views {
     public partial class PreferencesView : Window, IViewFor<PreferencesViewModel> {
         public PreferencesView() {
             InitializeComponent();
-            ViewModel = new PreferencesViewModel();
+
+            this.WhenActivated(d => {
+                Disposable.Create(() => Debug.WriteLine("VIEW ACTIVATED"));
+            });
         }
 
-        protected override void OnClosed(EventArgs e) {
-            base.OnClosed(e);
+        protected override void OnClosing(CancelEventArgs e) {
+            base.OnClosing(e);
             ViewModel.Close.Execute(null);
         }
 
