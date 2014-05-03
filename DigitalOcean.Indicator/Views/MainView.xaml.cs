@@ -26,6 +26,12 @@ namespace DigitalOcean.Indicator.Views {
                 .Subscribe(_ => Close());
         }
 
+        // Window has to be shown before it can be assigned as an Owner of another.
+        protected override void OnContentRendered(EventArgs e) {
+            base.OnContentRendered(e);
+            Hide();
+        }
+
         #region IViewFor<IMainViewModel> Members
 
         object IViewFor.ViewModel {
