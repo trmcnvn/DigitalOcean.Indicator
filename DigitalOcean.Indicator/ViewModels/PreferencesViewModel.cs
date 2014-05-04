@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Reactive.Disposables;
 using ReactiveUI;
 using Splat;
 

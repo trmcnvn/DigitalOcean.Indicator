@@ -9,9 +9,9 @@ namespace DigitalOcean.Indicator.Models {
     [DataContract]
     public class UserSettings : ReactiveObject {
         private const string CacheKey = "__UserSettings__";
-        private string _apiKey;
-        private string _clientId;
-        private TimeSpan _refreshInterval;
+        private string _apiKey = "";
+        private string _clientId = "";
+        private TimeSpan _refreshInterval = TimeSpan.FromSeconds(5);
 
         [DataMember]
         public string ClientId {
@@ -31,22 +31,8 @@ namespace DigitalOcean.Indicator.Models {
             set { this.RaiseAndSetIfChanged(ref _refreshInterval, value); }
         }
 
-        public UserSettings() {
-            SetDefaultValues();
-        }
-
-        public void SetDefaultValues() {
-            ClientId = "";
-            ApiKey = "";
-            RefreshInterval = TimeSpan.FromMinutes(5);
-        }
-
         public IObservable<Unit> Save() {
             return BlobCache.UserAccount.InsertObject(CacheKey, this).Retry(3);
-        }
-
-        public IDisposable AutoSave() {
-            return this.AutoPersist(_ => Save(), TimeSpan.FromMilliseconds(100));
         }
 
         public static IObservable<UserSettings> LoadFromCache() {

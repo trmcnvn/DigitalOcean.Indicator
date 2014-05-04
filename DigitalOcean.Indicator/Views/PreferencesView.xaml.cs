@@ -1,7 +1,5 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
-using System.Reactive;
 using System.Reactive.Disposables;
 using System.Windows;
 using DigitalOcean.Indicator.ViewModels;
@@ -15,14 +13,7 @@ namespace DigitalOcean.Indicator.Views {
         public PreferencesView() {
             InitializeComponent();
 
-            this.WhenActivated(d => {
-                Disposable.Create(() => Debug.WriteLine("VIEW ACTIVATED"));
-            });
-        }
-
-        protected override void OnClosing(CancelEventArgs e) {
-            base.OnClosing(e);
-            ViewModel.Close.Execute(null);
+            this.WhenActivated(d => { Disposable.Create(() => Debug.WriteLine("VIEW ACTIVATED")); });
         }
 
         #region IViewFor<PreferencesViewModel> Members
@@ -35,5 +26,10 @@ namespace DigitalOcean.Indicator.Views {
         public PreferencesViewModel ViewModel { get; set; }
 
         #endregion
+
+        protected override void OnClosing(CancelEventArgs e) {
+            base.OnClosing(e);
+            ViewModel.Close.Execute(null);
+        }
     }
 }

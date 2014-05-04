@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Windows;
 using DigitalOcean.Indicator.ViewModels;
 using ReactiveUI;
@@ -27,13 +26,7 @@ namespace DigitalOcean.Indicator.Views {
                 .Subscribe(_ => Close());
         }
 
-        // Window has to be shown before it can be assigned as an Owner of another.
-        protected override void OnContentRendered(EventArgs e) {
-            base.OnContentRendered(e);
-            Hide();
-        }
-
-        #region IViewFor<IMainViewModel> Members
+        #region IViewFor<MainViewModel> Members
 
         object IViewFor.ViewModel {
             get { return ViewModel; }
@@ -43,5 +36,13 @@ namespace DigitalOcean.Indicator.Views {
         public MainViewModel ViewModel { get; set; }
 
         #endregion
+
+        /// <summary>
+        /// Window has to be shown before it can be assigned as an Owner of another.
+        /// </summary>
+        protected override void OnContentRendered(EventArgs e) {
+            base.OnContentRendered(e);
+            Hide();
+        }
     }
 }
