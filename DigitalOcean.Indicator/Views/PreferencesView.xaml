@@ -1,6 +1,32 @@
 ﻿<Window x:Class="DigitalOcean.Indicator.Views.PreferencesView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Preferences" Height="300" Width="300">
-    <Grid />
+        Icon="pack://application:,,,/DigitalOcean.Indicator;component/Resources/droplet.ico"
+        Title="Preferences" Height="350" Width="450" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <StackPanel>
+            <GroupBox Header="DigitalOcean Credentials" Margin="10">
+                <StackPanel Margin="10">
+                    <TextBlock FontStyle="Italic"  Margin="0,0,0,5">
+                        Find these values at
+                        <Hyperlink x:Name="APILink" NavigateUri="https://cloud.digitalocean.com/api_access">https://cloud.digitalocean.com/api_access</Hyperlink>
+                    </TextBlock>
+                    
+                    <TextBlock Text="Client ID" Margin="0,5,0,5" />
+                    <TextBox Padding="3" />
+
+                    <TextBlock Text="API Key" Margin="0,5,0,5" />
+                    <TextBox Padding="3" />
+                </StackPanel>
+            </GroupBox>
+            <GroupBox Header="General Settings" Margin="10,0,10,10">
+                <StackPanel Margin="10">
+                    <TextBlock Text="Refresh Interval (in minutes)" Margin="0,5,0,5" />
+                    <TextBox Padding="3" />
+                </StackPanel>
+            </GroupBox>
+            
+            
+        </StackPanel>
+    </Grid>
 </Window>
