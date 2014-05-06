@@ -61,6 +61,9 @@
     <Reference Include="ReactiveUI.Blend">
       <HintPath>..\packages\reactiveui-platforms.5.99.5-beta\lib\net45\ReactiveUI.Blend.dll</HintPath>
     </Reference>
+    <Reference Include="ReactiveUI.Events">
+      <HintPath>..\packages\reactiveui-events.5.99.5-beta\lib\net45\ReactiveUI.Events.dll</HintPath>
+    </Reference>
     <Reference Include="ReactiveUI.Xaml">
       <HintPath>..\packages\reactiveui-platforms.5.99.5-beta\lib\net45\ReactiveUI.Xaml.dll</HintPath>
     </Reference>

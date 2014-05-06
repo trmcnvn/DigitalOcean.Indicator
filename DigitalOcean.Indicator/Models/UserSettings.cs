@@ -11,7 +11,8 @@ namespace DigitalOcean.Indicator.Models {
         private const string CacheKey = "__UserSettings__";
         private string _apiKey = "";
         private string _clientId = "";
-        private TimeSpan _refreshInterval = TimeSpan.FromSeconds(5);
+        private int _refreshInterval = 300;
+        private bool _runOnStartup = false;
 
         [DataMember]
         public string ClientId {
@@ -26,9 +27,15 @@ namespace DigitalOcean.Indicator.Models {
         }
 
         [DataMember]
-        public TimeSpan RefreshInterval {
+        public int RefreshInterval {
             get { return _refreshInterval; }
             set { this.RaiseAndSetIfChanged(ref _refreshInterval, value); }
+        }
+
+        [DataMember]
+        public bool RunOnStartup {
+            get { return _runOnStartup; }
+            set { this.RaiseAndSetIfChanged(ref _runOnStartup, value); }
         }
 
         public IObservable<Unit> Save() {

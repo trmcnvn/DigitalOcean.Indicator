@@ -3,6 +3,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Windows;
+using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Navigation;
 using DigitalOcean.Indicator.ViewModels;
 using ReactiveUI;
@@ -16,9 +18,18 @@ namespace DigitalOcean.Indicator.Views {
             InitializeComponent();
 
             this.WhenActivated(d => {
-                d(Observable.FromEventPattern<RequestNavigateEventHandler, RequestNavigateEventArgs>(
-                    h => APILink.RequestNavigate += h, h => APILink.RequestNavigate -= h)
-                    .Subscribe(x => Process.Start(x.EventArgs.Uri.ToString())));
+                d(ApiLink.Events().RequestNavigate
+                    .Subscribe(x => Process.Start(x.Uri.ToString())));
+
+                d(this.Bind(ViewModel, x => x.ClientId, x => x.ClientId.Text));
+                d(this.Bind(ViewModel, x => x.ApiKey, x => x.ApiKey.Text));
+                d(this.Bind(ViewModel, x => x.RefreshInterval, x => x.RefreshInterval.Text));
+                d(this.Bind(ViewModel, x => x.RunOnStartup, x => x.RunOnStartup.IsChecked, RunOnStartup.Events().Click));
+
+                d(this.BindCommand(ViewModel, x => x.Save, x => x.BtnSave));
+                d(this.BindCommand(ViewModel, x => x.Close, x => x.BtnClose));
+                d(this.WhenAnyObservable(x => x.ViewModel.Close)
+                    .Subscribe(_ => Close()));
             });
         }
 
@@ -35,7 +46,7 @@ namespace DigitalOcean.Indicator.Views {
 
         protected override void OnClosing(CancelEventArgs e) {
             base.OnClosing(e);
-            ViewModel.Close.Execute(null);
+            ViewModel.Closing.Execute(null);
         }
     }
 }
