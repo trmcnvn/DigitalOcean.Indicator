@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Windows.Documents;
 using DigitalOcean.Indicator.Models;
 using ReactiveUI;
 using Splat;
@@ -8,8 +6,8 @@ using Splat;
 namespace DigitalOcean.Indicator.ViewModels {
     public class PreferencesViewModel : ReactiveObject, ISupportsActivation {
         private readonly UserSettings _userSettings;
-        private string _clientId;
         private string _apiKey;
+        private string _clientId;
         private int _refreshInterval;
         private bool _runOnStartup;
 
@@ -52,7 +50,7 @@ namespace DigitalOcean.Indicator.ViewModels {
 
                 d(Closing.Subscribe(_ => {
                     var vm = Locator.Current.GetService<MainViewModel>();
-                    vm.PreferencesActive = false;
+                    vm.PreferencesOpened = false;
                 }));
 
                 d(Save.Subscribe(_ => {

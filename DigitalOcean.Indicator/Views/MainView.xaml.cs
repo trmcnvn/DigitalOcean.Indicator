@@ -13,6 +13,7 @@ namespace DigitalOcean.Indicator.Views {
             InitializeComponent();
             ViewModel = Locator.Current.GetService<MainViewModel>();
 
+            this.BindCommand(ViewModel, x => x.Refresh, x => x.TrayCtxRefresh);
             this.BindCommand(ViewModel, x => x.Preferences, x => x.TrayCtxPrefs);
             this.BindCommand(ViewModel, x => x.Close, x => x.TrayCtxClose);
 

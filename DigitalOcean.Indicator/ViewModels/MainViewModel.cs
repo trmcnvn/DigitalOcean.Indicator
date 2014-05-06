@@ -6,21 +6,25 @@ using Splat;
 namespace DigitalOcean.Indicator.ViewModels {
     public class MainViewModel : ReactiveObject {
         private readonly UserSettings _userSettings;
-        private bool _preferencesActive;
+        private bool _preferencesOpened;
 
         public ReactiveCommand<object> Preferences { get; private set; }
+        public ReactiveCommand<object> Refresh { get; private set; }
         public ReactiveCommand<object> Close { get; private set; }
 
-        public bool PreferencesActive {
-            get { return _preferencesActive; }
-            set { this.RaiseAndSetIfChanged(ref _preferencesActive, value); }
+        public bool PreferencesOpened {
+            get { return _preferencesOpened; }
+            set { this.RaiseAndSetIfChanged(ref _preferencesOpened, value); }
         }
 
         public MainViewModel() {
             _userSettings = Locator.Current.GetService<UserSettings>();
 
-            Preferences = ReactiveCommand.Create(this.WhenAnyValue(x => x.PreferencesActive, pa => !pa));
-            Preferences.Subscribe(_ => PreferencesActive = true);
+            Preferences = ReactiveCommand.Create(this.WhenAnyValue(x => x.PreferencesOpened, po => !po));
+            Preferences.Subscribe(_ => PreferencesOpened = true);
+            Refresh =
+                ReactiveCommand.Create(this.WhenAnyValue(x => x._userSettings.ClientId, x => x._userSettings.ApiKey,
+                    (c, a) => !String.IsNullOrWhiteSpace(c) && !String.IsNullOrWhiteSpace(a)));
             Close = ReactiveCommand.Create();
         }
     }

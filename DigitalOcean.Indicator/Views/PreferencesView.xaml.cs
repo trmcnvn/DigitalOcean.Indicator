@@ -1,11 +1,9 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Reactive.Linq;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
-using System.Windows.Navigation;
 using DigitalOcean.Indicator.ViewModels;
 using ReactiveUI;
 
@@ -30,6 +28,16 @@ namespace DigitalOcean.Indicator.Views {
                 d(this.BindCommand(ViewModel, x => x.Close, x => x.BtnClose));
                 d(this.WhenAnyObservable(x => x.ViewModel.Close)
                     .Subscribe(_ => Close()));
+
+                d(RefreshInterval.Events().PreviewTextInput
+                    .Subscribe(x => {
+                        int dontcare;
+                        var parsed = int.TryParse(string.Format("{0}{1}", RefreshInterval.Text, x.Text),
+                            out dontcare);
+                        if (!parsed) {
+                            x.Handled = true;
+                        }
+                    }));
             });
         }
 

@@ -11,11 +11,11 @@
         <StackPanel Grid.Row="0">
             <GroupBox Header="DigitalOcean Credentials" Margin="10">
                 <StackPanel Margin="10">
-                    <TextBlock FontStyle="Italic"  Margin="0,0,0,5">
-                        Find these values at
-                        <Hyperlink x:Name="ApiLink" NavigateUri="https://cloud.digitalocean.com/api_access">https://cloud.digitalocean.com/api_access</Hyperlink>
+                    <TextBlock FontStyle="Italic" Margin="0,0,0,5">
+                    Find these values at
+                    <Hyperlink x:Name="ApiLink" NavigateUri="https://cloud.digitalocean.com/api_access">https://cloud.digitalocean.com/api_access</Hyperlink>
                     </TextBlock>
-                    
+
                     <TextBlock Text="Client ID" Margin="0,5,0,5" />
                     <TextBox x:Name="ClientId" Padding="3" />
 
@@ -27,14 +27,16 @@
                 <StackPanel Margin="10">
                     <TextBlock Text="Refresh Interval (in seconds)" Margin="0,5,0,5" />
                     <TextBox x:Name="RefreshInterval" Padding="3" Margin="0,0,0,10" />
-                    
+
                     <CheckBox x:Name="RunOnStartup" Content="Run on startup" />
                 </StackPanel>
             </GroupBox>
         </StackPanel>
         <Grid Grid.Row="1" Margin="10">
-            <Button x:Name="BtnSave" Content="Save" Width="140" Height="24" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-            <Button x:Name="BtnClose" Content="Close" IsCancel="True" IsDefault="True" Width="140" Height="24" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+            <Button x:Name="BtnSave" Content="Save" Width="140" Height="24" VerticalAlignment="Center"
+                    HorizontalAlignment="Left" />
+            <Button x:Name="BtnClose" Content="Close" IsCancel="True" IsDefault="True" Width="140" Height="24"
+                    VerticalAlignment="Center" HorizontalAlignment="Right" />
         </Grid>
     </Grid>
 </Window>

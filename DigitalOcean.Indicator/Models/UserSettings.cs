@@ -12,7 +12,7 @@ namespace DigitalOcean.Indicator.Models {
         private string _apiKey = "";
         private string _clientId = "";
         private int _refreshInterval = 300;
-        private bool _runOnStartup = false;
+        private bool _runOnStartup;
 
         [DataMember]
         public string ClientId {
