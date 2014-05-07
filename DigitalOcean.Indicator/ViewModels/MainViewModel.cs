@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using DigitalOcean.API;
+using DigitalOcean.API.Responses;
 using DigitalOcean.Indicator.Models;
 using ReactiveUI;
 using Splat;
+using Droplet = DigitalOcean.Indicator.Models.Droplet;
 
 namespace DigitalOcean.Indicator.ViewModels {
     public class MainViewModel : ReactiveObject {
@@ -15,7 +17,11 @@ namespace DigitalOcean.Indicator.ViewModels {
         public ReactiveCommand<object> Preferences { get; private set; }
         public ReactiveCommand<object> Refresh { get; private set; }
         public ReactiveCommand<object> Close { get; private set; }
+
         public ReactiveCommand<List<Droplet>> Droplets { get; set; }
+        public ReactiveCommand<EventPtr> Reboot { get; private set; }
+        public ReactiveCommand<EventPtr> PowerOff { get; private set; }
+        public ReactiveCommand<EventPtr> PowerOn { get; private set; }
 
         public bool PreferencesOpened {
             get { return _preferencesOpened; }
@@ -35,6 +41,9 @@ namespace DigitalOcean.Indicator.ViewModels {
 
             Close = ReactiveCommand.Create();
             Droplets = ReactiveCommand.Create(_ => GetDroplets());
+            Reboot = ReactiveCommand.Create(x => RebootDroplet(x));
+            PowerOff = ReactiveCommand.Create(x => PowerOffDroplet(x));
+            PowerOn = ReactiveCommand.Create(x => PowerOnDroplet(x));
 
             AuthCheck();
         }
@@ -60,12 +69,27 @@ namespace DigitalOcean.Indicator.ViewModels {
                         Address = droplet.ip_address,
                         Region = regionName,
                         Size = sizeType,
-                        Type = image.image.name,
+                        Image = image.image.name,
                         Status = droplet.status == "active" ? DropletStatus.On : DropletStatus.Off
                     });
                 }
                 return dropletList;
             });
+        }
+
+        private IObservable<EventPtr> RebootDroplet(object id) {
+            var client = new DigitalOceanClient(_userSettings.ClientId, _userSettings.ApiKey);
+            return Observable.StartAsync(async () => await client.Droplets.RebootDroplet((int)id));
+        }
+
+        private IObservable<EventPtr> PowerOffDroplet(object id) {
+            var client = new DigitalOceanClient(_userSettings.ClientId, _userSettings.ApiKey);
+            return Observable.StartAsync(async () => await client.Droplets.PowerOffDroplet((int)id));
+        }
+
+        private IObservable<EventPtr> PowerOnDroplet(object id) {
+            var client = new DigitalOceanClient(_userSettings.ClientId, _userSettings.ApiKey);
+            return Observable.StartAsync(async () => await client.Droplets.PowerOnDroplet((int)id));
         }
 
         private void AuthCheck() {

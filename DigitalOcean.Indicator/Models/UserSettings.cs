@@ -12,7 +12,6 @@ namespace DigitalOcean.Indicator.Models {
         private string _apiKey = "";
         private string _clientId = "";
         private int _refreshInterval = 300;
-        private bool _runOnStartup;
 
         [DataMember]
         public string ClientId {
@@ -30,12 +29,6 @@ namespace DigitalOcean.Indicator.Models {
         public int RefreshInterval {
             get { return _refreshInterval; }
             set { this.RaiseAndSetIfChanged(ref _refreshInterval, value); }
-        }
-
-        [DataMember]
-        public bool RunOnStartup {
-            get { return _runOnStartup; }
-            set { this.RaiseAndSetIfChanged(ref _runOnStartup, value); }
         }
 
         public IObservable<Unit> Save() {

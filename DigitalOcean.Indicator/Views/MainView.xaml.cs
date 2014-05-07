@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using DigitalOcean.Indicator.Models;
 using DigitalOcean.Indicator.ViewModels;
 using ReactiveUI;
 using Splat;
@@ -12,6 +15,8 @@ namespace DigitalOcean.Indicator.Views {
     /// Interaction logic for MainView.xaml
     /// </summary>
     public partial class MainView : Window, IViewFor<MainViewModel> {
+        private readonly CompositeDisposable _disposables = new CompositeDisposable();
+
         public MainView() {
             InitializeComponent();
             ViewModel = Locator.Current.GetService<MainViewModel>();
@@ -26,19 +31,21 @@ namespace DigitalOcean.Indicator.Views {
                     ((IViewFor)view).ViewModel = new PreferencesViewModel();
                     view.Show();
                 });
+
             this.WhenAnyObservable(x => x.ViewModel.Close)
                 .Subscribe(_ => Close());
 
             this.WhenAnyObservable(x => x.ViewModel.Refresh)
                 .Subscribe(_ => {
-                    TrayCtxPlaceholder.Visibility = Visibility.Visible;
-                    TrayCtxPlaceholder.Header = "Refreshing...";
+                    TrayCtxStatus.Visibility = Visibility.Visible;
+                    TrayCtxStatus.Header = "Refreshing...";
+                    TrayCtxRefresh.IsEnabled = false;
 
-                    // need to clear the previous entries, if any
-                    var idx = TrayCtx.Items.IndexOf(TrayCtxPlaceholder);
-                    if (idx != 0) {
+                    // remove previous entries, if any
+                    var statusIdx = TrayCtx.Items.IndexOf(TrayCtxStatus);
+                    if (statusIdx != 0) {
                         var items = new List<object>();
-                        for (var i = 0; i < idx; ++i) {
+                        for (var i = 0; i < statusIdx; i++) {
                             items.Add(TrayCtx.Items.GetItemAt(i));
                         }
 
@@ -49,24 +56,15 @@ namespace DigitalOcean.Indicator.Views {
                 });
 
             this.WhenAnyObservable(x => x.ViewModel.Droplets)
-                .SelectMany(x => x)
                 .Subscribe(x => {
-                    TrayCtxPlaceholder.Visibility = Visibility.Collapsed;
+                    TrayCtxStatus.Visibility = Visibility.Collapsed;
+                    TrayCtxRefresh.IsEnabled = true;
+                    _disposables.Clear();
 
-                    var menuItem = new MenuItem { Header = x.Name };
-                    var subMenu = new List<Control> {
-                        new MenuItem { Header = string.Format("IP: {0}", x.Address) },
-                        new MenuItem { Header = string.Format("Type: {0}", x.Type) },
-                        new MenuItem { Header = string.Format("Region: {0}", x.Region) },
-                        new MenuItem { Header = string.Format("Size: {0}", x.Size) },
-                        new Separator(),
-                        new MenuItem { Header = "View on web..." },
-                        new MenuItem { Header = "Power off..." },
-                        new MenuItem { Header = "Reboot..." }
-                    };
-
-                    menuItem.ItemsSource = subMenu;
-                    TrayCtx.Items.Insert(0, menuItem);
+                    foreach (var droplet in x) {
+                        var menuItem = new MenuItem { Header = droplet.Name, ItemsSource = CreateDropletMenu(droplet) };
+                        TrayCtx.Items.Insert(0, menuItem);
+                    }
                 });
         }
 
@@ -80,6 +78,47 @@ namespace DigitalOcean.Indicator.Views {
         public MainViewModel ViewModel { get; set; }
 
         #endregion
+
+        private IEnumerable<Control> CreateDropletMenu(Droplet droplet) {
+            var list = new List<Control> {
+                new MenuItem { Header = string.Format("IP: {0}", droplet.Address) },
+                new MenuItem { Header = string.Format("Image: {0}", droplet.Image) },
+                new MenuItem { Header = string.Format("Region: {0}", droplet.Region) },
+                new MenuItem { Header = string.Format("Size: {0}", droplet.Size) },
+                new Separator(),
+            };
+
+            var websiteButton = new MenuItem { Header = "View on website", Tag = droplet.Website };
+            _disposables.Add(websiteButton.Events().Click
+                .Select(x => (MenuItem)x.Source)
+                .Subscribe(x => Process.Start(x.Tag.ToString())));
+
+            var powerButton = new MenuItem {
+                Header = droplet.Status == DropletStatus.On ? "Power off" : "Power on",
+                Tag = droplet.Id
+            };
+            _disposables.Add(powerButton.Events().Click
+                .Select(x => (MenuItem)x.Source)
+                .Subscribe(x => {
+                    if (droplet.Status == DropletStatus.On) {
+                        ViewModel.PowerOff.Execute(x.Tag);
+                    } else {
+                        ViewModel.PowerOn.Execute(x.Tag);
+                    }
+                }));
+
+            Debug.WriteLine(powerButton.GetHashCode());
+
+            var rebootButton = new MenuItem { Header = "Reboot", Tag = droplet.Id };
+            _disposables.Add(rebootButton.Events().Click
+                .Select(x => (MenuItem)x.Source)
+                .Subscribe(x => ViewModel.Reboot.Execute(x.Tag)));
+
+            list.Add(websiteButton);
+            list.Add(rebootButton);
+            list.Add(powerButton);
+            return list;
+        }
 
         /// <summary>
         /// Window has to be shown before it can be assigned as an Owner of another.

@@ -22,7 +22,6 @@ namespace DigitalOcean.Indicator.Views {
                 d(this.Bind(ViewModel, x => x.ClientId, x => x.ClientId.Text));
                 d(this.Bind(ViewModel, x => x.ApiKey, x => x.ApiKey.Text));
                 d(this.Bind(ViewModel, x => x.RefreshInterval, x => x.RefreshInterval.Text));
-                d(this.Bind(ViewModel, x => x.RunOnStartup, x => x.RunOnStartup.IsChecked, RunOnStartup.Events().Click));
 
                 d(this.BindCommand(ViewModel, x => x.Save, x => x.BtnSave));
                 d(this.BindCommand(ViewModel, x => x.Close, x => x.BtnClose));
