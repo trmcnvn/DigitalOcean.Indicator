@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Reactive.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using DigitalOcean.Indicator.ViewModels;
 using ReactiveUI;
 using Splat;
@@ -25,6 +28,46 @@ namespace DigitalOcean.Indicator.Views {
                 });
             this.WhenAnyObservable(x => x.ViewModel.Close)
                 .Subscribe(_ => Close());
+
+            this.WhenAnyObservable(x => x.ViewModel.Refresh)
+                .Subscribe(_ => {
+                    TrayCtxPlaceholder.Visibility = Visibility.Visible;
+                    TrayCtxPlaceholder.Header = "Refreshing...";
+
+                    // need to clear the previous entries, if any
+                    var idx = TrayCtx.Items.IndexOf(TrayCtxPlaceholder);
+                    if (idx != 0) {
+                        var items = new List<object>();
+                        for (var i = 0; i < idx; ++i) {
+                            items.Add(TrayCtx.Items.GetItemAt(i));
+                        }
+
+                        foreach (var item in items) {
+                            TrayCtx.Items.Remove(item);
+                        }
+                    }
+                });
+
+            this.WhenAnyObservable(x => x.ViewModel.Droplets)
+                .SelectMany(x => x)
+                .Subscribe(x => {
+                    TrayCtxPlaceholder.Visibility = Visibility.Collapsed;
+
+                    var menuItem = new MenuItem { Header = x.Name };
+                    var subMenu = new List<Control> {
+                        new MenuItem { Header = string.Format("IP: {0}", x.Address) },
+                        new MenuItem { Header = string.Format("Type: {0}", x.Type) },
+                        new MenuItem { Header = string.Format("Region: {0}", x.Region) },
+                        new MenuItem { Header = string.Format("Size: {0}", x.Size) },
+                        new Separator(),
+                        new MenuItem { Header = "View on web..." },
+                        new MenuItem { Header = "Power off..." },
+                        new MenuItem { Header = "Reboot..." }
+                    };
+
+                    menuItem.ItemsSource = subMenu;
+                    TrayCtx.Items.Insert(0, menuItem);
+                });
         }
 
         #region IViewFor<MainViewModel> Members

@@ -9,6 +9,8 @@
                     MenuActivation="LeftOrRightClick">
         <tb:TaskbarIcon.ContextMenu>
             <ContextMenu x:Name="TrayCtx">
+                <MenuItem x:Name="TrayCtxPlaceholder" Header="No Droplets Found" IsEnabled="False" />
+                <Separator />
                 <MenuItem x:Name="TrayCtxPrefs" Header="Preferences" />
                 <MenuItem x:Name="TrayCtxRefresh" Header="Refresh" />
                 <Separator />
