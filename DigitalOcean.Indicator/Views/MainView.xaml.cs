@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using DigitalOcean.Indicator.Models;
 using DigitalOcean.Indicator.ViewModels;
+using Hardcodet.Wpf.TaskbarNotification;
 using ReactiveUI;
 using Splat;
 
@@ -15,11 +16,12 @@ namespace DigitalOcean.Indicator.Views {
     /// Interaction logic for MainView.xaml
     /// </summary>
     public partial class MainView : Window, IViewFor<MainViewModel> {
-        private readonly CompositeDisposable _disposables = new CompositeDisposable();
+        private readonly CompositeDisposable _disposables;
 
         public MainView() {
             InitializeComponent();
             ViewModel = Locator.Current.GetService<MainViewModel>();
+            _disposables = new CompositeDisposable();
 
             this.BindCommand(ViewModel, x => x.Refresh, x => x.TrayCtxRefresh);
             this.BindCommand(ViewModel, x => x.Preferences, x => x.TrayCtxPrefs);
@@ -66,6 +68,11 @@ namespace DigitalOcean.Indicator.Views {
                         TrayCtx.Items.Insert(0, menuItem);
                     }
                 });
+
+            Observable.Merge(this.WhenAnyObservable(x => x.ViewModel.Reboot),
+                this.WhenAnyObservable(x => x.ViewModel.PowerOff),
+                this.WhenAnyObservable(x => x.ViewModel.PowerOn))
+                .Subscribe(_ => ShowBalloonTip("Finished", BalloonIcon.Info));
         }
 
         #region IViewFor<MainViewModel> Members
@@ -88,10 +95,20 @@ namespace DigitalOcean.Indicator.Views {
                 new Separator(),
             };
 
-            var websiteButton = new MenuItem { Header = "View on website", Tag = droplet.Website };
+            var websiteButton = new MenuItem { Header = "View on website", Tag = droplet };
             _disposables.Add(websiteButton.Events().Click
                 .Select(x => (MenuItem)x.Source)
-                .Subscribe(x => Process.Start(x.Tag.ToString())));
+                .Select(x => (Droplet)x.Tag)
+                .Subscribe(x => Process.Start(x.Website)));
+
+            var rebootButton = new MenuItem { Header = "Reboot", Tag = droplet };
+            _disposables.Add(rebootButton.Events().Click
+                .Select(x => (MenuItem)x.Source)
+                .Select(x => (Droplet)x.Tag)
+                .Subscribe(x => {
+                    ShowBalloonTip(string.Format("Rebooting {0}", x.Name), BalloonIcon.Info);
+                    ViewModel.Reboot.Execute(x.Id);
+                }));
 
             var powerButton = new MenuItem {
                 Header = droplet.Status == DropletStatus.On ? "Power off" : "Power on",
@@ -99,20 +116,16 @@ namespace DigitalOcean.Indicator.Views {
             };
             _disposables.Add(powerButton.Events().Click
                 .Select(x => (MenuItem)x.Source)
+                .Select(x => (Droplet)x.Tag)
                 .Subscribe(x => {
                     if (droplet.Status == DropletStatus.On) {
-                        ViewModel.PowerOff.Execute(x.Tag);
+                        ShowBalloonTip(string.Format("Powering off {0}", x.Name), BalloonIcon.Info);
+                        ViewModel.PowerOff.Execute(x.Id);
                     } else {
-                        ViewModel.PowerOn.Execute(x.Tag);
+                        ShowBalloonTip(string.Format("Powering on {0}", x.Name), BalloonIcon.Info);
+                        ViewModel.PowerOn.Execute(x.Id);
                     }
                 }));
-
-            Debug.WriteLine(powerButton.GetHashCode());
-
-            var rebootButton = new MenuItem { Header = "Reboot", Tag = droplet.Id };
-            _disposables.Add(rebootButton.Events().Click
-                .Select(x => (MenuItem)x.Source)
-                .Subscribe(x => ViewModel.Reboot.Execute(x.Tag)));
 
             list.Add(websiteButton);
             list.Add(rebootButton);
@@ -126,6 +139,10 @@ namespace DigitalOcean.Indicator.Views {
         protected override void OnContentRendered(EventArgs e) {
             base.OnContentRendered(e);
             Hide();
+        }
+
+        private void ShowBalloonTip(string message, BalloonIcon icon) {
+            Tray.ShowBalloonTip("DigitalOcean Indicator", message, icon);
         }
     }
 }

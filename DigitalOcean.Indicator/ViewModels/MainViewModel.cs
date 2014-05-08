@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using DigitalOcean.API;
 using DigitalOcean.API.Responses;
 using DigitalOcean.Indicator.Models;
@@ -11,6 +15,7 @@ using Droplet = DigitalOcean.Indicator.Models.Droplet;
 
 namespace DigitalOcean.Indicator.ViewModels {
     public class MainViewModel : ReactiveObject {
+        private readonly CompositeDisposable _disposable;
         private readonly UserSettings _userSettings;
         private bool _preferencesOpened;
 
@@ -19,9 +24,9 @@ namespace DigitalOcean.Indicator.ViewModels {
         public ReactiveCommand<object> Close { get; private set; }
 
         public ReactiveCommand<List<Droplet>> Droplets { get; set; }
-        public ReactiveCommand<EventPtr> Reboot { get; private set; }
-        public ReactiveCommand<EventPtr> PowerOff { get; private set; }
-        public ReactiveCommand<EventPtr> PowerOn { get; private set; }
+        public ReactiveCommand<Unit> Reboot { get; private set; }
+        public ReactiveCommand<Unit> PowerOff { get; private set; }
+        public ReactiveCommand<Unit> PowerOn { get; private set; }
 
         public bool PreferencesOpened {
             get { return _preferencesOpened; }
@@ -30,6 +35,7 @@ namespace DigitalOcean.Indicator.ViewModels {
 
         public MainViewModel() {
             _userSettings = Locator.Current.GetService<UserSettings>();
+            _disposable = new CompositeDisposable();
 
             Preferences = ReactiveCommand.Create(this.WhenAnyValue(x => x.PreferencesOpened, po => !po));
             Preferences.Subscribe(_ => PreferencesOpened = true);
@@ -45,7 +51,7 @@ namespace DigitalOcean.Indicator.ViewModels {
             PowerOff = ReactiveCommand.Create(x => PowerOffDroplet(x));
             PowerOn = ReactiveCommand.Create(x => PowerOnDroplet(x));
 
-            AuthCheck();
+            RefreshDroplets();
         }
 
         private IObservable<List<Droplet>> GetDroplets() {
@@ -77,24 +83,52 @@ namespace DigitalOcean.Indicator.ViewModels {
             });
         }
 
-        private IObservable<EventPtr> RebootDroplet(object id) {
+        private IObservable<Unit> RebootDroplet(object id) {
             var client = new DigitalOceanClient(_userSettings.ClientId, _userSettings.ApiKey);
-            return Observable.StartAsync(async () => await client.Droplets.RebootDroplet((int)id));
+            return Observable.StartAsync(ct => Task.Run(async () => {
+                var reboot = await client.Droplets.RebootDroplet((int)id);
+                await WaitForEvent(client, reboot.event_id);
+            }, ct));
         }
 
-        private IObservable<EventPtr> PowerOffDroplet(object id) {
+        private IObservable<Unit> PowerOffDroplet(object id) {
             var client = new DigitalOceanClient(_userSettings.ClientId, _userSettings.ApiKey);
-            return Observable.StartAsync(async () => await client.Droplets.PowerOffDroplet((int)id));
+            return Observable.StartAsync(ct => Task.Run(async () => {
+                var power = await client.Droplets.PowerOffDroplet((int)id);
+                await WaitForEvent(client, power.event_id);
+            }, ct));
         }
 
-        private IObservable<EventPtr> PowerOnDroplet(object id) {
+        private IObservable<Unit> PowerOnDroplet(object id) {
             var client = new DigitalOceanClient(_userSettings.ClientId, _userSettings.ApiKey);
-            return Observable.StartAsync(async () => await client.Droplets.PowerOnDroplet((int)id));
+            return Observable.StartAsync(ct => Task.Run(async () => {
+                var power = await client.Droplets.PowerOnDroplet((int)id);
+                await WaitForEvent(client, power.event_id);
+            }, ct));
         }
 
-        private void AuthCheck() {
-            if (Refresh.CanExecute(null)) {
-                Refresh.Execute(null);
+        private void RefreshDroplets() {
+            if (!Refresh.CanExecute(null)) {
+                return;
+            }
+
+            this.WhenAnyValue(x => x._userSettings.RefreshInterval)
+                .Subscribe(x => {
+                    _disposable.Clear();
+                    _disposable.Add(Observable.Interval(TimeSpan.FromSeconds(x))
+                        .Subscribe(_ => Refresh.Execute(null)));
+                });
+            Refresh.Execute(null);
+        }
+
+        private async Task WaitForEvent(DigitalOceanClient client, int eventId) {
+            while (true) {
+                var @event = await client.Events.GetEvent(eventId);
+                int percent;
+                if (int.TryParse(@event.@event.percentage, out percent) && percent == 100) {
+                    break;
+                }
+                Thread.Sleep(TimeSpan.FromSeconds(5));
             }
         }
     }
