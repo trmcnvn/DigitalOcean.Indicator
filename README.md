@@ -1,4 +1,4 @@
-## DigitalOcean Indicator
+# ![](http://i.imgur.com/llqIpX6.png) DigitalOcean Indicator
 
 This Windows application was inspired by the work of Andrew, seen [here](http://blog.andrewsomething.com/2014/04/25/digitalocean-indicator-release/)!
 
