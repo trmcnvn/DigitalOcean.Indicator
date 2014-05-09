@@ -5,6 +5,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using DigitalOcean.Indicator.Models;
 using DigitalOcean.Indicator.ViewModels;
 using Hardcodet.Wpf.TaskbarNotification;
@@ -64,7 +65,19 @@ namespace DigitalOcean.Indicator.Views {
                     _disposables.Clear();
 
                     foreach (var droplet in x) {
-                        var menuItem = new MenuItem { Header = droplet.Name, ItemsSource = CreateDropletMenu(droplet) };
+                        var status = droplet.Status == DropletStatus.On ? "on" : "off";
+
+                        var icon = new Image {
+                            Source = new BitmapImage(new Uri(
+                                string.Format(
+                                    "pack://application:,,,/DigitalOcean.Indicator;component/Resources/power_{0}.ico",
+                                    status)))
+                        };
+                        var menuItem = new MenuItem {
+                            Header = droplet.Name,
+                            ItemsSource = CreateDropletMenu(droplet),
+                            Icon = icon
+                        };
                         TrayCtx.Items.Insert(0, menuItem);
                     }
                 });

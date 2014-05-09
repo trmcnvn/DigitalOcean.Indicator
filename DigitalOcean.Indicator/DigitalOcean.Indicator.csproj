@@ -171,7 +171,8 @@
     <Resource Include="Resources\droplet.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\droplet.png" />
+    <Resource Include="Resources\power_off.ico" />
+    <Resource Include="Resources\power_on.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
