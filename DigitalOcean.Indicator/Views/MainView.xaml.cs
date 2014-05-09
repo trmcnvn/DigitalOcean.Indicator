@@ -69,10 +69,15 @@ namespace DigitalOcean.Indicator.Views {
                     }
                 });
 
-            Observable.Merge(this.WhenAnyObservable(x => x.ViewModel.Reboot),
-                this.WhenAnyObservable(x => x.ViewModel.PowerOff),
-                this.WhenAnyObservable(x => x.ViewModel.PowerOn))
-                .Subscribe(_ => ShowBalloonTip("Finished", BalloonIcon.Info));
+            this.WhenAnyObservable(x => x.ViewModel.Reboot)
+                .Subscribe(x => ShowBalloonTip(string.Format("Rebooted {0}", x.Name), BalloonIcon.Info));
+            this.WhenAnyObservable(x => x.ViewModel.PowerOff)
+                .Merge(this.WhenAnyObservable(x => x.ViewModel.PowerOn))
+                .Subscribe(x => {
+                    var msg = x.Status == DropletStatus.On ? "Powered off {0}" : "Powered on {0}";
+                    ShowBalloonTip(string.Format(msg, x.Name), BalloonIcon.Info);
+                    ViewModel.Refresh.Execute(null);
+                });
         }
 
         #region IViewFor<MainViewModel> Members
@@ -107,12 +112,12 @@ namespace DigitalOcean.Indicator.Views {
                 .Select(x => (Droplet)x.Tag)
                 .Subscribe(x => {
                     ShowBalloonTip(string.Format("Rebooting {0}", x.Name), BalloonIcon.Info);
-                    ViewModel.Reboot.Execute(x.Id);
+                    ViewModel.Reboot.Execute(x);
                 }));
 
             var powerButton = new MenuItem {
                 Header = droplet.Status == DropletStatus.On ? "Power off" : "Power on",
-                Tag = droplet.Id
+                Tag = droplet
             };
             _disposables.Add(powerButton.Events().Click
                 .Select(x => (MenuItem)x.Source)
@@ -120,10 +125,10 @@ namespace DigitalOcean.Indicator.Views {
                 .Subscribe(x => {
                     if (droplet.Status == DropletStatus.On) {
                         ShowBalloonTip(string.Format("Powering off {0}", x.Name), BalloonIcon.Info);
-                        ViewModel.PowerOff.Execute(x.Id);
+                        ViewModel.PowerOff.Execute(x);
                     } else {
                         ShowBalloonTip(string.Format("Powering on {0}", x.Name), BalloonIcon.Info);
-                        ViewModel.PowerOn.Execute(x.Id);
+                        ViewModel.PowerOn.Execute(x);
                     }
                 }));
 

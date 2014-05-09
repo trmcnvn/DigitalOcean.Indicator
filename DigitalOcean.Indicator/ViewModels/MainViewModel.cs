@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DigitalOcean.API;
-using DigitalOcean.API.Responses;
 using DigitalOcean.Indicator.Models;
 using ReactiveUI;
 using Splat;
-using Droplet = DigitalOcean.Indicator.Models.Droplet;
 
 namespace DigitalOcean.Indicator.ViewModels {
     public class MainViewModel : ReactiveObject {
@@ -24,9 +21,9 @@ namespace DigitalOcean.Indicator.ViewModels {
         public ReactiveCommand<object> Close { get; private set; }
 
         public ReactiveCommand<List<Droplet>> Droplets { get; set; }
-        public ReactiveCommand<Unit> Reboot { get; private set; }
-        public ReactiveCommand<Unit> PowerOff { get; private set; }
-        public ReactiveCommand<Unit> PowerOn { get; private set; }
+        public ReactiveCommand<Droplet> Reboot { get; private set; }
+        public ReactiveCommand<Droplet> PowerOff { get; private set; }
+        public ReactiveCommand<Droplet> PowerOn { get; private set; }
 
         public bool PreferencesOpened {
             get { return _preferencesOpened; }
@@ -47,9 +44,9 @@ namespace DigitalOcean.Indicator.ViewModels {
 
             Close = ReactiveCommand.Create();
             Droplets = ReactiveCommand.Create(_ => GetDroplets());
-            Reboot = ReactiveCommand.Create(x => RebootDroplet(x));
-            PowerOff = ReactiveCommand.Create(x => PowerOffDroplet(x));
-            PowerOn = ReactiveCommand.Create(x => PowerOnDroplet(x));
+            Reboot = ReactiveCommand.Create(x => RebootDroplet((Droplet)x));
+            PowerOff = ReactiveCommand.Create(x => PowerOffDroplet((Droplet)x));
+            PowerOn = ReactiveCommand.Create(x => PowerOnDroplet((Droplet)x));
 
             RefreshDroplets();
         }
@@ -83,27 +80,30 @@ namespace DigitalOcean.Indicator.ViewModels {
             });
         }
 
-        private IObservable<Unit> RebootDroplet(object id) {
+        private IObservable<Droplet> RebootDroplet(Droplet droplet) {
             var client = new DigitalOceanClient(_userSettings.ClientId, _userSettings.ApiKey);
             return Observable.StartAsync(ct => Task.Run(async () => {
-                var reboot = await client.Droplets.RebootDroplet((int)id);
+                var reboot = await client.Droplets.RebootDroplet(droplet.Id);
                 await WaitForEvent(client, reboot.event_id);
+                return droplet;
             }, ct));
         }
 
-        private IObservable<Unit> PowerOffDroplet(object id) {
+        private IObservable<Droplet> PowerOffDroplet(Droplet droplet) {
             var client = new DigitalOceanClient(_userSettings.ClientId, _userSettings.ApiKey);
             return Observable.StartAsync(ct => Task.Run(async () => {
-                var power = await client.Droplets.PowerOffDroplet((int)id);
+                var power = await client.Droplets.PowerOffDroplet(droplet.Id);
                 await WaitForEvent(client, power.event_id);
+                return droplet;
             }, ct));
         }
 
-        private IObservable<Unit> PowerOnDroplet(object id) {
+        private IObservable<Droplet> PowerOnDroplet(Droplet droplet) {
             var client = new DigitalOceanClient(_userSettings.ClientId, _userSettings.ApiKey);
             return Observable.StartAsync(ct => Task.Run(async () => {
-                var power = await client.Droplets.PowerOnDroplet((int)id);
+                var power = await client.Droplets.PowerOnDroplet(droplet.Id);
                 await WaitForEvent(client, power.event_id);
+                return droplet;
             }, ct));
         }
 
@@ -121,7 +121,7 @@ namespace DigitalOcean.Indicator.ViewModels {
             Refresh.Execute(null);
         }
 
-        private async Task WaitForEvent(DigitalOceanClient client, int eventId) {
+        private static async Task WaitForEvent(DigitalOceanClient client, int eventId) {
             while (true) {
                 var @event = await client.Events.GetEvent(eventId);
                 int percent;
