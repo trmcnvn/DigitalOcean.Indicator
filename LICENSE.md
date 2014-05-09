@@ -1,19 +1,3 @@
-## DigitalOcean Indicator
-
-This Windows application was inspired by the work of Andrew, seen [here](http://blog.andrewsomething.com/2014/04/25/digitalocean-indicator-release/)!
-
-![ui](http://i.imgur.com/TjnRJVc.png)
-
-
-![notification1](http://i.imgur.com/G9ew15v.png)
-![notification2](http://i.imgur.com/wZSXdqP.png)
-
-## Install
-
-Download the latest release from the GitHub releases page [here](https://github.com/vevix/DigitalOcean.Indicator/releases).
-
-## License
-
 The MIT License (MIT)
 
 Copyright (c) 2014 Thomas McNiven (vevix)
