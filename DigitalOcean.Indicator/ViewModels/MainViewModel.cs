@@ -16,6 +16,27 @@ namespace DigitalOcean.Indicator.ViewModels {
         private readonly UserSettings _userSettings;
         private bool _preferencesOpened;
 
+        public MainViewModel() {
+            _userSettings = Locator.Current.GetService<UserSettings>();
+            _disposable = new CompositeDisposable();
+
+            Preferences = ReactiveCommand.Create(this.WhenAnyValue(x => x.PreferencesOpened, po => !po));
+            Preferences.Subscribe(_ => PreferencesOpened = true);
+
+            Refresh =
+                ReactiveCommand.Create(this.WhenAnyValue(x => x._userSettings.ApiKey,
+                    (a) => !String.IsNullOrWhiteSpace(a)));
+            Refresh.Subscribe(_ => Droplets.Execute(null));
+
+            Close = ReactiveCommand.Create();
+            Droplets = ReactiveCommand.CreateAsyncObservable(_ => GetDroplets());
+            Reboot = ReactiveCommand.CreateAsyncObservable(x => RebootDroplet((Droplet) x));
+            PowerOff = ReactiveCommand.CreateAsyncObservable(x => PowerOffDroplet((Droplet) x));
+            PowerOn = ReactiveCommand.CreateAsyncObservable(x => PowerOnDroplet((Droplet) x));
+
+            RefreshDroplets();
+        }
+
         public ReactiveCommand<object> Preferences { get; private set; }
         public ReactiveCommand<object> Refresh { get; private set; }
         public ReactiveCommand<object> Close { get; private set; }
@@ -30,79 +51,45 @@ namespace DigitalOcean.Indicator.ViewModels {
             set { this.RaiseAndSetIfChanged(ref _preferencesOpened, value); }
         }
 
-        public MainViewModel() {
-            _userSettings = Locator.Current.GetService<UserSettings>();
-            _disposable = new CompositeDisposable();
-
-            Preferences = ReactiveCommand.Create(this.WhenAnyValue(x => x.PreferencesOpened, po => !po));
-            Preferences.Subscribe(_ => PreferencesOpened = true);
-
-            Refresh =
-                ReactiveCommand.Create(this.WhenAnyValue(x => x._userSettings.ClientId, x => x._userSettings.ApiKey,
-                    (c, a) => !String.IsNullOrWhiteSpace(c) && !String.IsNullOrWhiteSpace(a)));
-            Refresh.Subscribe(_ => Droplets.Execute(null));
-
-            Close = ReactiveCommand.Create();
-            Droplets = ReactiveCommand.Create(_ => GetDroplets());
-            Reboot = ReactiveCommand.Create(x => RebootDroplet((Droplet)x));
-            PowerOff = ReactiveCommand.Create(x => PowerOffDroplet((Droplet)x));
-            PowerOn = ReactiveCommand.Create(x => PowerOnDroplet((Droplet)x));
-
-            RefreshDroplets();
-        }
-
         private IObservable<List<Droplet>> GetDroplets() {
-            var client = new DigitalOceanClient(_userSettings.ClientId, _userSettings.ApiKey);
+            var client = new DigitalOceanClient(_userSettings.ApiKey);
             return Observable.StartAsync(async () => {
-                var dropletList = new List<Droplet>();
-
-                var droplets = await client.Droplets.GetDroplets();
-                foreach (var droplet in droplets.droplets) {
-                    var image = await client.Images.GetImage(droplet.image_id);
-
-                    var regions = await client.Regions.GetRegions();
-                    var regionName = regions.regions.First(x => x.id == droplet.region_id).name;
-
-                    var sizes = await client.Sizes.GetSizes();
-                    var sizeType = sizes.sizes.First(x => x.id == droplet.size_id).name;
-
-                    dropletList.Add(new Droplet {
-                        Id = droplet.id,
-                        Name = droplet.name,
-                        Address = droplet.ip_address,
-                        Region = regionName,
-                        Size = sizeType,
-                        Image = image.image.name,
-                        Status = droplet.status == "active" ? DropletStatus.On : DropletStatus.Off
-                    });
-                }
-                return dropletList;
+                var droplets = await client.Droplets.GetAll();
+                return droplets.Select(droplet => new Droplet {
+                    Id = droplet.Id,
+                    Name = droplet.Name,
+                    Address = droplet.Networks.v4[0].IpAddress,
+                    Region = droplet.Region.Name,
+                    Size = droplet.Size.Slug,
+                    Image = droplet.Image.Name,
+                    Status = droplet.Status == "active" ? DropletStatus.On : DropletStatus.Off
+                }).ToList();
             });
         }
 
         private IObservable<Droplet> RebootDroplet(Droplet droplet) {
-            var client = new DigitalOceanClient(_userSettings.ClientId, _userSettings.ApiKey);
+            var client = new DigitalOceanClient(_userSettings.ApiKey);
             return Observable.StartAsync(ct => Task.Run(async () => {
-                var reboot = await client.Droplets.RebootDroplet(droplet.Id);
-                await WaitForEvent(client, reboot.event_id);
+                var reboot = await client.DropletActions.Reboot(droplet.Id);
+                await WaitForAction(client, reboot.Id);
                 return droplet;
             }, ct));
         }
 
         private IObservable<Droplet> PowerOffDroplet(Droplet droplet) {
-            var client = new DigitalOceanClient(_userSettings.ClientId, _userSettings.ApiKey);
+            var client = new DigitalOceanClient(_userSettings.ApiKey);
             return Observable.StartAsync(ct => Task.Run(async () => {
-                var power = await client.Droplets.PowerOffDroplet(droplet.Id);
-                await WaitForEvent(client, power.event_id);
+                var power = await client.DropletActions.PowerOff(droplet.Id);
+                await WaitForAction(client, power.Id);
                 return droplet;
             }, ct));
         }
 
         private IObservable<Droplet> PowerOnDroplet(Droplet droplet) {
-            var client = new DigitalOceanClient(_userSettings.ClientId, _userSettings.ApiKey);
+            var client = new DigitalOceanClient(_userSettings.ApiKey);
             return Observable.StartAsync(ct => Task.Run(async () => {
-                var power = await client.Droplets.PowerOnDroplet(droplet.Id);
-                await WaitForEvent(client, power.event_id);
+                var power = await client.DropletActions.PowerOn(droplet.Id);
+                await WaitForAction(client, power.Id);
                 return droplet;
             }, ct));
         }
@@ -121,11 +108,10 @@ namespace DigitalOcean.Indicator.ViewModels {
             Refresh.Execute(null);
         }
 
-        private static async Task WaitForEvent(DigitalOceanClient client, int eventId) {
+        private static async Task WaitForAction(IDigitalOceanClient client, int actionId) {
             while (true) {
-                var @event = await client.Events.GetEvent(eventId);
-                int percent;
-                if (int.TryParse(@event.@event.percentage, out percent) && percent == 100) {
+                var @event = await client.Actions.Get(actionId);
+                if (@event.CompletedAt != null) {
                     break;
                 }
                 Thread.Sleep(TimeSpan.FromSeconds(5));

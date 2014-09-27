@@ -10,14 +10,7 @@ namespace DigitalOcean.Indicator.Models {
     public class UserSettings : ReactiveObject {
         private const string CacheKey = "__UserSettings__";
         private string _apiKey = "";
-        private string _clientId = "";
         private int _refreshInterval = 300;
-
-        [DataMember]
-        public string ClientId {
-            get { return _clientId; }
-            set { this.RaiseAndSetIfChanged(ref _clientId, value); }
-        }
 
         [DataMember]
         public string ApiKey {

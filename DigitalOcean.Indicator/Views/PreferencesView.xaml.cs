@@ -19,7 +19,6 @@ namespace DigitalOcean.Indicator.Views {
                 d(ApiLink.Events().RequestNavigate
                     .Subscribe(x => Process.Start(x.Uri.ToString())));
 
-                d(this.Bind(ViewModel, x => x.ClientId, x => x.ClientId.Text));
                 d(this.Bind(ViewModel, x => x.ApiKey, x => x.ApiKey.Text));
                 d(this.Bind(ViewModel, x => x.RefreshInterval, x => x.RefreshInterval.Text));
 

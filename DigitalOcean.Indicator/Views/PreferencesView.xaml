@@ -13,12 +13,9 @@
                 <StackPanel Margin="10">
                     <TextBlock FontStyle="Italic" Margin="0,0,0,5">
                     Find these values at
-                    <Hyperlink x:Name="ApiLink" NavigateUri="https://cloud.digitalocean.com/api_access">https://cloud.digitalocean.com/api_access</Hyperlink>
+                    <Hyperlink x:Name="ApiLink" NavigateUri="https://cloud.digitalocean.com/settings/tokens/new">https://cloud.digitalocean.com/settings/tokens/new</Hyperlink>
                     </TextBlock>
-
-                    <TextBlock Text="Client ID" Margin="0,5,0,5" />
-                    <TextBox x:Name="ClientId" Padding="3" />
-
+                    
                     <TextBlock Text="API Key" Margin="0,5,0,5" />
                     <TextBox x:Name="ApiKey" Padding="3" />
                 </StackPanel>

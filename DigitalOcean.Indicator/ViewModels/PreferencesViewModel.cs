@@ -7,7 +7,6 @@ namespace DigitalOcean.Indicator.ViewModels {
     public class PreferencesViewModel : ReactiveObject, ISupportsActivation {
         private readonly UserSettings _userSettings;
         private string _apiKey;
-        private string _clientId;
         private int _refreshInterval;
 
         public ReactiveCommand<object> Close { get; private set; }
@@ -19,11 +18,6 @@ namespace DigitalOcean.Indicator.ViewModels {
             set { this.RaiseAndSetIfChanged(ref _apiKey, value); }
         }
 
-        public string ClientId {
-            get { return _clientId; }
-            set { this.RaiseAndSetIfChanged(ref _clientId, value); }
-        }
-
         public int RefreshInterval {
             get { return _refreshInterval; }
             set { this.RaiseAndSetIfChanged(ref _refreshInterval, value); }
@@ -32,7 +26,6 @@ namespace DigitalOcean.Indicator.ViewModels {
         public PreferencesViewModel() {
             Activator = new ViewModelActivator();
             _userSettings = Locator.Current.GetService<UserSettings>();
-            _clientId = _userSettings.ClientId;
             _apiKey = _userSettings.ApiKey;
             _refreshInterval = _userSettings.RefreshInterval;
 
@@ -47,7 +40,6 @@ namespace DigitalOcean.Indicator.ViewModels {
                 }));
 
                 d(Save.Subscribe(_ => {
-                    _userSettings.ClientId = ClientId;
                     _userSettings.ApiKey = ApiKey;
                     _userSettings.RefreshInterval = RefreshInterval;
                     _userSettings.Save();
