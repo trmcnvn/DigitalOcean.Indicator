@@ -60,7 +60,7 @@ namespace DigitalOcean.Indicator.ViewModels {
                     Name = droplet.Name,
                     Address = droplet.Networks.v4[0].IpAddress,
                     Region = droplet.Region.Name,
-                    Size = droplet.Size.Slug,
+                    Size = droplet.SizeSlug,
                     Image = droplet.Image.Name,
                     Status = droplet.Status == "active" ? DropletStatus.On : DropletStatus.Off
                 }).ToList();
